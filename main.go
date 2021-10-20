@@ -19,7 +19,7 @@ type Options struct {
 }
 
 const (
-	moduleName               = "donger"
+	moduleName               = "checkiday"
 	mqttConnectRetryInternal = 5
 	mqttDisconnectTimeout    = 1000
 )
