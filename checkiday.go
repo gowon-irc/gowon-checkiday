@@ -33,7 +33,7 @@ func (d Day) String() string {
 }
 
 func colourList(in []string) (out []string) {
-	colours := []string{"green", "red", "magenta", "orange", "yellow", "cyan"}
+	colours := []string{"blue", "green", "red", "magenta", "orange", "yellow", "cyan"}
 	cl := len(colours)
 
 	for n, i := range in {
