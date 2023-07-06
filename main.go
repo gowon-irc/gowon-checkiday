@@ -28,6 +28,10 @@ func daysHandler(m gowon.Message) (string, error) {
 	return checkiday()
 }
 
+func mdaysHandler(m gowon.Message) (string, error) {
+	return checkmday()
+}
+
 func defaultPublishHandler(c mqtt.Client, msg mqtt.Message) {
 	log.Printf("unexpected message:  %s\n", msg)
 }
@@ -66,6 +70,7 @@ func main() {
 
 	mr := gowon.NewMessageRouter()
 	mr.AddCommand("days", daysHandler)
+	mr.AddCommand("mdays", mdaysHandler)
 	mr.Subscribe(mqttOpts, moduleName)
 
 	log.Print("connecting to broker")

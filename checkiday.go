@@ -9,27 +9,30 @@ import (
 )
 
 const (
-	checkidayAPIURL = "https://checkiday.com/api/3/?d"
+	checkidayAPIURL = "https://checkiday.com/api/4/?d"
 )
 
 type daysJSON struct {
-	Days []Day `json:"holidays"`
+	Days        []Event `json:"events"`
+	MultiEvents []Event `json:"multiday_ongoing"`
 }
 
-func (ds daysJSON) List() (out []string) {
+type Event struct {
+	Name string `json:"name"`
+}
+
+func (ds daysJSON) listDays() (out []string) {
 	for _, d := range ds.Days {
 		out = append(out, d.Name)
 	}
 	return
 }
 
-// Day represents a single day result from checkiday
-type Day struct {
-	Name string `json:"name"`
-}
-
-func (d Day) String() string {
-	return d.Name
+func (ds daysJSON) listMdays() (out []string) {
+	for _, d := range ds.MultiEvents {
+		out = append(out, d.Name)
+	}
+	return
 }
 
 func colourList(in []string) (out []string) {
@@ -66,7 +69,33 @@ func checkiday() (msg string, err error) {
 		return "", err
 	}
 
-	cl := colourList(data.List())
+	cl := colourList(data.listDays())
+
+	return strings.Join(cl, ", "), nil
+}
+
+func checkmday() (msg string, err error) {
+	data := &daysJSON{}
+
+	res, err := http.Get(checkidayAPIURL)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	err = json.Unmarshal(body, &data)
+
+	if err != nil {
+		return "", err
+	}
+
+	cl := colourList(data.listMdays())
 
 	return strings.Join(cl, ", "), nil
 }

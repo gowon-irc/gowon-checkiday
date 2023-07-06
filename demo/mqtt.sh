@@ -5,14 +5,21 @@ BROKER_PORT="${BROKER_PORT:-1883}"
 
 ACTION="${1}"
 
-mqtt_msg() {
+days_mqtt_msg() {
 	cat <<-EOF
 	{"module":"gowon","msg":".days","nick":"tester","dest":"#gowon","command":"days","args":""}
 	EOF
 }
 
+mdays_mqtt_msg() {
+	cat <<-EOF
+	{"module":"gowon","msg":".mdays","nick":"tester","dest":"#gowon","command":"mdays","args":""}
+	EOF
+}
+
 pub() {
-    mqtt_msg | mosquitto_pub -h "${BROKER_HOST}" -p "${BROKER_PORT}" -t "/gowon/input" -s
+    days_mqtt_msg | mosquitto_pub -h "${BROKER_HOST}" -p "${BROKER_PORT}" -t "/gowon/input" -s
+    mdays_mqtt_msg | mosquitto_pub -h "${BROKER_HOST}" -p "${BROKER_PORT}" -t "/gowon/input" -s
 }
 
 sub() {
