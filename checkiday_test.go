@@ -7,16 +7,16 @@ import (
 )
 
 var (
-	d1 = Day{
+	d1 = Event{
 		Name: "test day",
 	}
 
-	d2 = Day{
+	d2 = Event{
 		Name: "test day 2",
 	}
 
 	dj = daysJSON{
-		Days: []Day{d1, d2},
+		Days: []Event{d1, d2},
 	}
 )
 
@@ -30,5 +30,5 @@ func TestDays(t *testing.T) {
 		"test day 2",
 	}
 
-	assert.Equal(t, dj.List(), expected)
+	assert.Equal(t, dj.listDays(), expected)
 }

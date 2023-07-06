@@ -35,6 +35,10 @@ func (ds daysJSON) listMdays() (out []string) {
 	return
 }
 
+func (e Event) String() string {
+	return e.Name
+}
+
 func colourList(in []string) (out []string) {
 	colours := []string{"green", "red", "blue", "orange", "magenta", "cyan", "yellow"}
 	cl := len(colours)
