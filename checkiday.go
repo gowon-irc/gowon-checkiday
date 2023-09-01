@@ -13,8 +13,9 @@ const (
 )
 
 type daysJSON struct {
-	Days        []Event `json:"events"`
-	MultiEvents []Event `json:"multiday_ongoing"`
+	Days          []Event `json:"events"`
+	MultiStarting []Event `json:"multiday_starting"`
+	MultiOngoing  []Event `json:"multiday_ongoing"`
 }
 
 type Event struct {
@@ -29,7 +30,10 @@ func (ds daysJSON) listDays() (out []string) {
 }
 
 func (ds daysJSON) listMdays() (out []string) {
-	for _, d := range ds.MultiEvents {
+	for _, d := range ds.MultiOngoing {
+		out = append(out, d.Name)
+	}
+	for _, d := range ds.MultiStarting {
 		out = append(out, d.Name)
 	}
 	return
