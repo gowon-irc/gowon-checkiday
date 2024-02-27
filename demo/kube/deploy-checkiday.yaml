@@ -17,6 +17,6 @@ spec:
       containers:
         - name: checkiday
           image: checkiday
-          env:
-            - name: GOWON_BROKER
-              value: mosquitto:1883
+          ports:
+            - containerPort: 8080
+              name: http

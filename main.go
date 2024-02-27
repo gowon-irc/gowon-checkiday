@@ -1,93 +1,75 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"net/http"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gin-gonic/gin"
 	"github.com/gowon-irc/go-gowon"
-	"github.com/jessevdk/go-flags"
 )
-
-type Options struct {
-	Prefix string `short:"P" long:"prefix" env:"GOWON_PREFIX" default:"." description:"prefix for commands"`
-	Broker string `short:"b" long:"broker" env:"GOWON_BROKER" default:"localhost:1883" description:"mqtt broker"`
-}
 
 const (
-	moduleName               = "checkiday"
-	mqttConnectRetryInternal = 5
-	mqttDisconnectTimeout    = 1000
+	moduleName = "checkiday"
 )
-
-func daysHandler(m gowon.Message) (string, error) {
-	return checkiday()
-}
-
-func mdaysHandler(m gowon.Message) (string, error) {
-	return checkmday()
-}
-
-func defaultPublishHandler(c mqtt.Client, msg mqtt.Message) {
-	log.Printf("unexpected message:  %s\n", msg)
-}
-
-func onConnectionLostHandler(c mqtt.Client, err error) {
-	log.Println("connection to broker lost")
-}
-
-func onRecconnectingHandler(c mqtt.Client, opts *mqtt.ClientOptions) {
-	log.Println("attempting to reconnect to broker")
-}
-
-func onConnectHandler(c mqtt.Client) {
-	log.Println("connected to broker")
-}
 
 func main() {
 	log.Printf("%s starting\n", moduleName)
 
-	opts := Options{}
-	if _, err := flags.Parse(&opts); err != nil {
+	r := gin.Default()
+
+	r.POST("/days/message", func(c *gin.Context) {
+		var m gowon.Message
+
+		if err := c.BindJSON(&m); err != nil {
+			log.Println("Error: unable to bind message to json", err)
+			return
+		}
+
+		out, err := checkiday()
+		if err != nil {
+			log.Println(err)
+			m.Msg = "{red}Error when looking up days{clear}"
+			c.IndentedJSON(http.StatusInternalServerError, &m)
+		}
+
+		m.Msg = out
+		c.IndentedJSON(http.StatusOK, &m)
+	})
+
+	r.GET("/days/help", func(c *gin.Context) {
+		c.IndentedJSON(http.StatusOK, &gowon.Message{
+			Module: moduleName,
+			Msg:    "what days is it today?",
+		})
+	})
+
+	r.POST("/mdays/message", func(c *gin.Context) {
+		var m gowon.Message
+
+		if err := c.BindJSON(&m); err != nil {
+			log.Println("Error: unable to bind message to json", err)
+			return
+		}
+
+		out, err := checkmday()
+		if err != nil {
+			log.Println(err)
+			m.Msg = "{red}Error when looking up mdays{clear}"
+			c.IndentedJSON(http.StatusInternalServerError, &m)
+		}
+
+		m.Msg = out
+		c.IndentedJSON(http.StatusOK, &m)
+	})
+
+	r.GET("/mdays/help", func(c *gin.Context) {
+		c.IndentedJSON(http.StatusOK, &gowon.Message{
+			Module: moduleName,
+			Msg:    "what months is it today?",
+		})
+	})
+
+	if err := r.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}
-
-	mqttOpts := mqtt.NewClientOptions()
-	mqttOpts.AddBroker(fmt.Sprintf("tcp://%s", opts.Broker))
-	mqttOpts.SetClientID(fmt.Sprintf("gowon_%s", moduleName))
-	mqttOpts.SetConnectRetry(true)
-	mqttOpts.SetConnectRetryInterval(mqttConnectRetryInternal * time.Second)
-	mqttOpts.SetAutoReconnect(true)
-
-	mqttOpts.DefaultPublishHandler = defaultPublishHandler
-	mqttOpts.OnConnectionLost = onConnectionLostHandler
-	mqttOpts.OnReconnecting = onRecconnectingHandler
-	mqttOpts.OnConnect = onConnectHandler
-
-	mr := gowon.NewMessageRouter()
-	mr.AddCommand("days", daysHandler)
-	mr.AddCommand("mdays", mdaysHandler)
-	mr.Subscribe(mqttOpts, moduleName)
-
-	log.Print("connecting to broker")
-
-	c := mqtt.NewClient(mqttOpts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-
-	log.Print("connected to broker")
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	<-sigs
-
-	log.Println("signal caught, exiting")
-	c.Disconnect(mqttDisconnectTimeout)
-	log.Println("shutdown complete")
 }

@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: checkiday-config
+data:
+  config.yaml: |
+    commands:
+      - command: days
+        endpoint: http://checkiday:8080/days
+
+      - command: mdays
+        endpoint: http://checkiday:8080/mdays
